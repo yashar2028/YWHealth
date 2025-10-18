@@ -1,4 +1,5 @@
 #!/bin/bash
+# Explanation in Docs.
 
 # Check if Poetry is installed.
 if ! command -v poetry &> /dev/null
@@ -8,21 +9,28 @@ then
     exit 1
 fi
 
+# Configure Poetry to create the virtual environment inside the project directory (.venv).
+echo "Configuring Poetry to use in-project virtual environments..."
+poetry config virtualenvs.in-project true
+
 echo "Starting PostgreSQL container..." # Database will run upon entering the venv.
 ./scripts/start_db.sh
 
-VENV_PATH=$(poetry env info --path 2>/dev/null) # The virtual environment path for Poetry.
+# The virtual environment path for Poetry.
+VENV_PATH=$(poetry env info --path 2>/dev/null)
 
+# If no venv exists yet, create one and get its path again.
 if [ -z "$VENV_PATH" ]; then
     echo "No Poetry environment found! Creating one..."
     poetry install
     VENV_PATH=$(poetry env info --path)
 fi
 
-# Activate the virtual environment.
+# Activate the virtual environment by replacing the current shell with one inside the venv.
 if [ -d "$VENV_PATH" ]; then
-    echo "Poetry environment found! Activating..."
-    source "$VENV_PATH/bin/activate"  # This will open a shell with the venv activated on the poetry venv path stored on VENV_PATH.
+    echo "Poetry environment found at $VENV_PATH"
+    echo "Entering virtual environment shell..."
+    exec bash --init-file <(echo ". ~/.bashrc; source \"$VENV_PATH/bin/activate\"")  # bash to start with a custom RC file (Load local .bashrc first (which includes aliases like ll)), which in this case is the venv's activate script. Reason we need custom bash rc shell is to source everything in a new clean shell (loaded with local .bashrc but we can make also a blank one).
 else
     echo "Failed to find or create a virtual environment."
     exit 1
