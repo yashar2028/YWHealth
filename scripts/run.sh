@@ -16,6 +16,8 @@ poetry config virtualenvs.in-project true
 echo "Starting PostgreSQL container..." # Database will run upon entering the venv.
 ./scripts/start_db.sh
 
+cd backend || exit 1 # Poetry (pyproject.toml) resides.
+
 # The virtual environment path for Poetry. This is absolutely The virtual environment associated with the current project not the Poetry's own .venv managing the Poetry tool itself.
 VENV_PATH=$(poetry env info --path 2>/dev/null)
 
